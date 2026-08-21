@@ -15,7 +15,7 @@
   --color-text-muted: #4a4a4a;
   --color-text-on-dark: #f5f5f5;
   --color-placeholder: #4a4a4a;
-  --color-transition-overlay: #0a0a0a;
+  --color-transition-overlay: #1a1a1a;
   --header-height: 80px;
   --max-width: 1280px;
   --font-body: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -89,19 +89,25 @@ ul {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: var(--color-transition-overlay);
   transform: translateY(0);
   pointer-events: none;
   animation: page-transition-reveal 0.7s 0.05s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
+/* Deliberately a sibling of .page-transition, not a child — it stays
+   fixed and centered on screen throughout, independent of the panel's
+   slide, only fading in and out as the panel arrives/departs. */
 .page-transition__logo {
-  width: clamp(64px, 10vw, 360px);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 10000;
+  width: clamp(64px, 10vw, 120px);
   height: auto;
+  transform: translate(-50%, -50%);
   opacity: 0;
+  pointer-events: none;
   animation: page-transition-logo-fade 0.7s 0.05s ease forwards;
 }
 
@@ -118,16 +124,20 @@ ul {
   0% {
     opacity: 0;
   }
-  35% {
+  30% {
+    opacity: 1;
+  }
+  70% {
     opacity: 1;
   }
   100% {
-    opacity: 1;
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-transition {
+  .page-transition,
+  .page-transition__logo {
     display: none !important;
   }
 }
@@ -593,6 +603,7 @@ ul {
 .site-footer__inner {
   max-width: var(--max-width);
   margin: 0 auto;
+  padding: 20px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;

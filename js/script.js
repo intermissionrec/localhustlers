@@ -127,6 +127,7 @@
 
   function initPageTransition() {
     var overlay = document.querySelector('.page-transition');
+    var logo = document.querySelector('.page-transition__logo');
     if (!overlay) return;
 
     var prefersReducedMotion =
@@ -167,18 +168,29 @@
       event.preventDefault();
       var href = link.href;
 
-      // Snap the overlay above the viewport with no transition, then
+      // Snap the panel above the viewport with no transition, then
       // animate it back down to cover the screen — the mirror image of
       // the reveal-on-load animation, so the motion always reads as one
       // continuous downward sweep no matter which direction it's going.
+      // The logo is independent: it just fades in and stays centered,
+      // it never moves with the panel.
       overlay.style.animation = 'none';
       overlay.style.transition = 'none';
       overlay.style.transform = 'translateY(-100%)';
       overlay.offsetHeight; // force a reflow so the line above takes effect first
       overlay.style.transition = 'transform ' + TRANSITION_MS + 'ms cubic-bezier(0.65, 0, 0.35, 1)';
 
+      if (logo) {
+        logo.style.animation = 'none';
+        logo.style.transition = 'none';
+        logo.style.opacity = '0';
+        logo.offsetHeight;
+        logo.style.transition = 'opacity ' + TRANSITION_MS + 'ms ease';
+      }
+
       requestAnimationFrame(function () {
         overlay.style.transform = 'translateY(0)';
+        if (logo) logo.style.opacity = '1';
       });
 
       window.setTimeout(function () {
