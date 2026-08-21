@@ -15,7 +15,7 @@ export GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 export EDITOR_PASSWORD="${EDITOR_PASSWORD:-}"
 export PREVIEW_PUBLIC_BASE="${PREVIEW_PUBLIC_BASE:-https://editor.intermissionrec.com/localhustlers/_preview}"
 
-exec streamlit run editor_app.py \
+exec .venv/bin/streamlit run editor_app.py \
 	--server.address 127.0.0.1 \
 	--server.port 8501 \
 	--server.baseUrlPath localhustlers \
