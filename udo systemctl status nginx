@@ -1,0 +1,19 @@
+[0;1;32m●[0m editor.service - Local Hustlers content editor (Streamlit)
+     Loaded: loaded (/etc/systemd/system/editor.service; enabled; vendor preset: enabled)
+     Active: [0;1;32mactive (running)[0m since Fri 2026-08-21 12:45:52 UTC; 1h 37min ago
+   Main PID: 141260 (streamlit)
+      Tasks: 5 (limit: 1035)
+     Memory: 42.9M
+     CGroup: /system.slice/editor.service
+             └─141260 /home/ubuntu/localhustlers/.venv/bin/python3 /home/ubuntu/localhustlers/.venv/bin/streamlit run editor_app.py --server.address 127.0.0.1 --server.port 8501 --server.baseUrlPath localhustlers --server.headless true
+
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]: tornado.web.HTTPError: HTTP 404: Not Found
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]: During handling of the above exception, another exception occurred:
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]: Traceback (most recent call last):
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]:   File "/home/ubuntu/localhustlers/.venv/lib/python3.8/site-packages/tornado/web.py", line 1298, in send_error
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]:   File "/home/ubuntu/localhustlers/.venv/lib/python3.8/site-packages/streamlit/web/server/routes.py", line 91, in write_error
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]:   File "/home/ubuntu/localhustlers/.venv/lib/python3.8/site-packages/tornado/web.py", line 944, in render
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]:   File "/home/ubuntu/localhustlers/.venv/lib/python3.8/site-packages/tornado/web.py", line 1090, in render_string
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]:   File "/home/ubuntu/localhustlers/.venv/lib/python3.8/site-packages/tornado/template.py", line 446, in load
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]:   File "/home/ubuntu/localhustlers/.venv/lib/python3.8/site-packages/tornado/template.py", line 476, in _create_template
+Aug 21 14:20:12 dsc-bot run_editor.sh[141260]: FileNotFoundError: [Errno 2] No such file or directory: '/home/ubuntu/localhustlers/.venv/lib/python3.8/site-packages/streamlit/static/index.html'
