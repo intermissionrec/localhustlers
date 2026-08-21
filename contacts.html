@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Hustlers — Контакти</title>
+<meta name="description" content="Свържи се с екипа на Local Hustlers.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div data-include="header"></div>
+
+<main>
+  <section class="page-section">
+    <div class="page-section__header">
+      <span class="page-section__eyebrow">Свържи се с нас</span>
+      <h1 class="page-section__title">Контакти</h1>
+      <p class="page-section__lede">
+        Имаш въпрос, идея за партньорство или искаш да участваш в следващия сезон?
+        Пиши ни.
+      </p>
+    </div>
+
+    <form class="contact-form" action="#" method="post">
+      <div>
+        <label for="name">Име</label>
+        <input type="text" id="name" name="name" placeholder="Твоето име" required>
+      </div>
+      <div>
+        <label for="email">Имейл</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div>
+        <label for="message">Съобщение</label>
+        <textarea id="message" name="message" rows="5" placeholder="Как можем да помогнем?" required></textarea>
+      </div>
+      <button type="submit" class="btn btn--primary">Изпрати съобщение</button>
+    </form>
+
+    <dl class="contact-details">
+      <div class="contact-details__item">
+        <dt>Имейл</dt>
+        <dd>hello@localhustlers.bg</dd>
+      </div>
+      <div class="contact-details__item">
+        <dt>Телефон</dt>
+        <dd>+359 00 000 0000</dd>
+      </div>
+      <div class="contact-details__item">
+        <dt>Локация</dt>
+        <dd>София, България</dd>
+      </div>
+    </dl>
+  </section>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
