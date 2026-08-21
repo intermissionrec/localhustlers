@@ -186,11 +186,16 @@ def render_reorder_widget(page_key, ids_key):
         return
     try:
         from streamlit_sortables import sort_items
-    except ImportError:
+    except Exception:
+        # Broad on purpose: streamlit-sortables needs Python 3.9+, and on
+        # an older interpreter it fails with a TypeError at import time
+        # (not ImportError), since it uses newer type-hint syntax. Either
+        # way, fall back to the always-available ↑/↓ buttons below rather
+        # than letting the page crash.
         st.caption(
-            "Drag-to-reorder needs one more package on the server: "
-            "`pip install -r requirements.txt`. Use the ↑ / ↓ buttons on "
-            "each card below in the meantime."
+            "Drag-to-reorder isn't available on this server (it needs Python 3.9+ "
+            "and the `streamlit-sortables` package). Use the ↑ / ↓ buttons on "
+            "each card below instead."
         )
         return
 
