@@ -32,7 +32,7 @@
 
 editor.intermissionrec.com {
 	basic_auth {
-		alex REPLACE_WITH_HASH
+		alex $2a$14$.x2Zy4Jn0G6uuyRjqN2fBOOm7TKJrdZzgJFWuHKN6hfIAeNgz.Uwe
 	}
 
 	handle_path /localhustlers/_preview/* {
