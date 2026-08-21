@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Convenience wrapper for running the editor the way deploy/Caddyfile
+# expects: bound to localhost only (Caddy is what's actually exposed to
+# the internet), served under /localhustlers, with the preview iframe
+# pointed at the public, proxied URL instead of localhost.
+#
+# Fill in GITHUB_TOKEN / EDITOR_PASSWORD below, or export them in your
+# shell / systemd unit instead of hardcoding them here — either works,
+# but don't commit real values in this file to git.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+export GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+export EDITOR_PASSWORD="${EDITOR_PASSWORD:-}"
+export PREVIEW_PUBLIC_BASE="${PREVIEW_PUBLIC_BASE:-https://editor.intermissionrec.com/localhustlers/_preview}"
+
+exec streamlit run editor_app.py \	--server.address 127.0.0.1 \
+	--server.port 8501 \
+	--server.baseUrlPath localhustlers \
+	--server.headless true
