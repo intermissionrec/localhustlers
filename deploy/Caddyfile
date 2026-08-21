@@ -1,0 +1,45 @@
+# Caddy config for editor.intermissionrec.com
+#
+# What this does:
+#   - Gets you HTTPS automatically (Let's Encrypt) for the domain — no
+#     certs to manage by hand.
+#   - Puts a login (HTTP Basic Auth) in front of EVERYTHING on this
+#     domain, so the editor — and its live preview — are only reachable
+#     by whoever has the username/password below. This is the actual
+#     access control; the app's own EDITOR_PASSWORD gate is optional
+#     extra insurance on top of this, not a substitute for it.
+#   - Serves the editor at /localhustlers (matching Streamlit's
+#     --server.baseUrlPath=localhustlers, set in run_editor.sh / the
+#     systemd unit).
+#   - Routes /localhustlers/_preview/* to the small preview server the
+#     editor starts on port 8642, stripping that prefix first — this is
+#     what makes the live preview pane work once you're not on
+#     localhost anymore (see PREVIEW_PUBLIC_BASE in editor_app.py).
+#
+# Before using this file:
+#   1. Point an A record for "editor" at intermissionrec.com to this
+#      VM's public IP (see the DNS notes in the chat reply).
+#   2. Generate a password hash — run `caddy hash-password`, type your
+#      password when prompted, and paste the output below in place of
+#      REPLACE_WITH_HASH. Pick your own username too.
+#   3. Install this as /etc/caddy/Caddyfile (or wherever your Caddy
+#      install expects it), then `sudo systemctl reload caddy`.
+#
+# Note: the basic_auth directive name has changed across Caddy
+# versions (older v2 releases used "basicauth"). If Caddy refuses to
+# start with a syntax error on this line, try that instead — check
+# `caddy version`.
+
+editor.intermissionrec.com {
+	basic_auth {
+		alex REPLACE_WITH_HASH
+	}
+
+	handle_path /localhustlers/_preview/* {
+		reverse_proxy localhost:8642
+	}
+
+	handle {
+		reverse_proxy localhost:8501
+	}
+}

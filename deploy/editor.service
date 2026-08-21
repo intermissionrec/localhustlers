@@ -1,0 +1,17 @@
+[Unit]
+Description=Local Hustlers content editor (Streamlit)
+After=network.target
+
+[Service]
+Type=simple
+# Adjust User and WorkingDirectory to match where you cloned the repo.
+User=alex
+WorkingDirectory=/home/alex/localhustlers
+Environment=GITHUB_TOKEN=REPLACE_WITH_YOUR_TOKEN
+Environment=EDITOR_PASSWORD=REPLACE_WITH_A_PASSWORD
+ExecStart=/home/alex/localhustlers/deploy/run_editor.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
