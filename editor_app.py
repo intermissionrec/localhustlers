@@ -25,8 +25,11 @@ instead of running the command above directly.
 """
 import http.server
 import os
+import re
 import socketserver
 import threading
+import uuid
+from pathlib import Path
 
 import streamlit as st
 
@@ -38,6 +41,16 @@ PREVIEW_BASE_ENV_VAR = "PREVIEW_PUBLIC_BASE"
 
 ROOT = build.ROOT
 PREVIEW_PORT = 8642
+
+# Uploaded photos/videos land under assets/uploads/<page>/<images|videos>/ so
+# they're plain files in the repo — GitHub Pages serves them like any other
+# asset, and "Publish to GitHub" picks them up the same as a content edit.
+UPLOADS_DIR = ROOT / "assets" / "uploads"
+IMAGE_TYPES = ["png", "jpg", "jpeg", "webp", "gif"]
+VIDEO_TYPES = ["mp4", "webm", "mov"]
+# GitHub hard-rejects files over 100MB. Stay comfortably under that so a
+# push doesn't fail after the editor already accepted the upload.
+MAX_VIDEO_BYTES = 90 * 1024 * 1024
 # Where the *browser* (not this server) should reach the preview server.
 # Locally this is just localhost:8642. Once this app is deployed behind a
 # reverse proxy on a real domain, the browser can't reach "localhost" on
@@ -92,6 +105,109 @@ def bump_preview():
 
 
 # ---------------------------------------------------------------------------
+# Photo / video uploads
+# ---------------------------------------------------------------------------
+def _safe_filename(name):
+    """Strip any path components and keep only filesystem-safe characters."""
+    name = os.path.basename(name)
+    stem, ext = os.path.splitext(name)
+    stem = re.sub(r"[^A-Za-z0-9_-]+", "-", stem).strip("-") or "file"
+    ext = re.sub(r"[^A-Za-z0-9.]+", "", ext)
+    return f"{stem}{ext}"
+
+
+def _save_uploaded_file(uploaded_file, subdir):
+    """Write an uploaded file under assets/uploads/<subdir>/ and return its
+    path relative to the site root (what the JSON/HTML should reference)."""
+    target_dir = UPLOADS_DIR / subdir
+    target_dir.mkdir(parents=True, exist_ok=True)
+    unique_name = f"{uuid.uuid4().hex[:8]}_{_safe_filename(uploaded_file.name)}"
+    dest = target_dir / unique_name
+    with open(dest, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return str((Path("assets") / "uploads" / subdir / unique_name).as_posix())
+
+
+def render_media_field(page_key, card_id, subdir, kind="image"):
+    """A photo or video upload control for one card. Keeps the resolved
+    relative path in session_state under f"{page_key}__card_{card_id}_{kind}",
+    which render_card_list reads back when building the card dict to save."""
+    path_key = f"{page_key}__card_{card_id}_{kind}"
+    sig_key = f"{path_key}_sig"
+    current = st.session_state.get(path_key, "")
+
+    if kind == "image":
+        label, types = "Photo", IMAGE_TYPES
+    else:
+        label, types = "Video", VIDEO_TYPES
+
+    if current:
+        full_path = ROOT / current
+        if kind == "image" and full_path.exists():
+            st.image(str(full_path), width=96)
+        else:
+            st.caption(f"Current {label.lower()}: `{current}`")
+        if st.button(f"🗑️ Remove {label.lower()}", key=f"{path_key}_clear"):
+            st.session_state[path_key] = ""
+            st.session_state[sig_key] = ""
+            st.rerun()
+
+    uploaded = st.file_uploader(f"Upload {label.lower()}", type=types, key=f"{path_key}_uploader")
+    if uploaded is not None:
+        sig = f"{uploaded.name}:{uploaded.size}"
+        if st.session_state.get(sig_key) != sig:
+            if kind == "video" and uploaded.size > MAX_VIDEO_BYTES:
+                st.error(
+                    f"That file is {uploaded.size / 1e6:.0f}MB. GitHub rejects files over "
+                    f"100MB, so keep videos under about {MAX_VIDEO_BYTES // (1024 * 1024)}MB "
+                    "— compress it or trim it down and try again."
+                )
+            else:
+                saved_path = _save_uploaded_file(uploaded, subdir)
+                st.session_state[path_key] = saved_path
+                st.session_state[sig_key] = sig
+                st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Reordering cards
+# ---------------------------------------------------------------------------
+def _card_label(page_key, card_id):
+    title = st.session_state.get(f"{page_key}__card_{card_id}_title", "").strip()
+    return f"{title or 'Untitled'} #{card_id}"
+
+
+def render_reorder_widget(page_key, ids_key):
+    """Drag-and-drop reordering when streamlit-sortables is installed. The
+    per-card ↑/↓ buttons in render_card_list always work regardless, in
+    case the drag component doesn't render nicely behind a given proxy."""
+    ids = st.session_state[ids_key]
+    if len(ids) < 2:
+        return
+    try:
+        from streamlit_sortables import sort_items
+    except ImportError:
+        st.caption(
+            "Drag-to-reorder needs one more package on the server: "
+            "`pip install -r requirements.txt`. Use the ↑ / ↓ buttons on "
+            "each card below in the meantime."
+        )
+        return
+
+    labels = [_card_label(page_key, cid) for cid in ids]
+    st.caption("🔀 Drag to reorder")
+    new_labels = sort_items(labels, key=f"{page_key}__sortable")
+    if new_labels != labels:
+        try:
+            new_ids = [int(label.rsplit("#", 1)[1]) for label in new_labels]
+        except (ValueError, IndexError):
+            new_ids = ids  # unexpected shape — leave the order untouched
+        if new_ids != ids and sorted(new_ids) == sorted(ids):
+            st.session_state[ids_key] = new_ids
+            st.rerun()
+
+
+# ---------------------------------------------------------------------------
 # Small state helpers
 # ---------------------------------------------------------------------------
 def load_page_once(page_key, init_fn):
@@ -113,39 +229,63 @@ def save_and_rebuild(page_key, data):
 # ---------------------------------------------------------------------------
 # Reusable editor for the card-grid pages (contestants / episodes)
 # ---------------------------------------------------------------------------
-def render_card_list(page_key, avatar_label, default_avatar):
+def render_card_list(page_key, avatar_label, default_avatar, media_subdir, allow_video=False):
     """Render + save the card list. Assumes the caller already initialized
     session_state (intro fields and the card id list) for this page."""
     ids_key = f"{page_key}__card_ids"
     counter_key = f"{page_key}__card_counter"
 
-    for card_id in list(st.session_state[ids_key]):
+    render_reorder_widget(page_key, ids_key)
+
+    ids = st.session_state[ids_key]
+    for position, card_id in enumerate(list(ids)):
         title_val = st.session_state.get(f"{page_key}__card_{card_id}_title", "")
         with st.expander(f"🎴 {title_val or '(untitled card)'}", expanded=False):
+            c_up, c_down, c_remove = st.columns([1, 1, 4])
+            with c_up:
+                if st.button("↑", key=f"{page_key}__card_{card_id}_up", disabled=(position == 0)):
+                    ids[position - 1], ids[position] = ids[position], ids[position - 1]
+                    st.rerun()
+            with c_down:
+                if st.button("↓", key=f"{page_key}__card_{card_id}_down", disabled=(position == len(ids) - 1)):
+                    ids[position + 1], ids[position] = ids[position], ids[position + 1]
+                    st.rerun()
+            with c_remove:
+                if st.button("🗑️ Remove this card", key=f"{page_key}__card_{card_id}_remove"):
+                    st.session_state[ids_key].remove(card_id)
+                    st.rerun()
+
             c1, c2 = st.columns([1, 3])
             with c1:
                 st.text_input(avatar_label, key=f"{page_key}__card_{card_id}_avatar")
             with c2:
                 st.text_input("Title", key=f"{page_key}__card_{card_id}_title")
             st.text_input("Subtext", key=f"{page_key}__card_{card_id}_meta")
-            if st.button("🗑️ Remove this card", key=f"{page_key}__card_{card_id}_remove"):
-                st.session_state[ids_key].remove(card_id)
-                st.rerun()
+
+            st.markdown("---")
+            render_media_field(page_key, card_id, media_subdir, kind="image")
+            if allow_video:
+                render_media_field(page_key, card_id, media_subdir, kind="video")
 
     if st.button("➕ Add a card", key=f"{page_key}__card_add"):
-        _add_card(page_key, ids_key, counter_key, {"avatar": default_avatar, "title": "", "meta": ""})
+        new_card = {"avatar": default_avatar, "title": "", "meta": "", "image": ""}
+        if allow_video:
+            new_card["video"] = ""
+        _add_card(page_key, ids_key, counter_key, new_card)
         st.rerun()
 
     if st.button("💾 Save & rebuild", key=f"{page_key}__save", type="primary"):
         cards = []
         for card_id in st.session_state[ids_key]:
-            cards.append(
-                {
-                    "avatar": st.session_state[f"{page_key}__card_{card_id}_avatar"],
-                    "title": st.session_state[f"{page_key}__card_{card_id}_title"],
-                    "meta": st.session_state[f"{page_key}__card_{card_id}_meta"],
-                }
-            )
+            card = {
+                "avatar": st.session_state[f"{page_key}__card_{card_id}_avatar"],
+                "title": st.session_state[f"{page_key}__card_{card_id}_title"],
+                "meta": st.session_state[f"{page_key}__card_{card_id}_meta"],
+                "image": st.session_state.get(f"{page_key}__card_{card_id}_image", ""),
+            }
+            if allow_video:
+                card["video"] = st.session_state.get(f"{page_key}__card_{card_id}_video", "")
+            cards.append(card)
         data = {
             "title": st.session_state[f"{page_key}__title"],
             "meta_description": st.session_state[f"{page_key}__meta"],
@@ -154,6 +294,8 @@ def render_card_list(page_key, avatar_label, default_avatar):
             "lede": st.session_state[f"{page_key}__lede"],
             "cards": cards,
         }
+        if f"{page_key}__placeholder" in st.session_state:
+            data["placeholder"] = st.session_state[f"{page_key}__placeholder"]
         save_and_rebuild(page_key, data)
 
 
@@ -161,9 +303,12 @@ def _add_card(page_key, ids_key, counter_key, card):
     st.session_state[counter_key] += 1
     card_id = st.session_state[counter_key]
     st.session_state[ids_key].append(card_id)
-    st.session_state[f"{page_key}__card_{card_id}_avatar"] = card["avatar"]
-    st.session_state[f"{page_key}__card_{card_id}_title"] = card["title"]
-    st.session_state[f"{page_key}__card_{card_id}_meta"] = card["meta"]
+    st.session_state[f"{page_key}__card_{card_id}_avatar"] = card.get("avatar", "")
+    st.session_state[f"{page_key}__card_{card_id}_title"] = card.get("title", "")
+    st.session_state[f"{page_key}__card_{card_id}_meta"] = card.get("meta", "")
+    st.session_state[f"{page_key}__card_{card_id}_image"] = card.get("image", "")
+    if "video" in card:
+        st.session_state[f"{page_key}__card_{card_id}_video"] = card.get("video", "")
 
 
 def render_intro_fields(page_key):
@@ -308,7 +453,7 @@ def render_contacts():
         save_and_rebuild(page_key, data)
 
 
-def render_cards_page(page_key, avatar_label, default_avatar):
+def render_cards_page(page_key, avatar_label, default_avatar, allow_video=False, include_placeholder=False):
     ids_key = f"{page_key}__card_ids"
     counter_key = f"{page_key}__card_counter"
 
@@ -318,16 +463,23 @@ def render_cards_page(page_key, avatar_label, default_avatar):
         st.session_state[f"{page_key}__eyebrow"] = data["eyebrow"]
         st.session_state[f"{page_key}__page_title"] = data["page_title"]
         st.session_state[f"{page_key}__lede"] = data["lede"]
+        if include_placeholder:
+            st.session_state[f"{page_key}__placeholder"] = data.get("placeholder", "")
         st.session_state[ids_key] = []
         st.session_state[counter_key] = 0
-        for card in data["cards"]:
+        for card in data.get("cards", []):
             _add_card(page_key, ids_key, counter_key, card)
 
     load_page_once(page_key, init)
 
     render_intro_fields(page_key)
+    if include_placeholder:
+        st.text_input(
+            "Fallback text shown when there are no cards yet",
+            key=f"{page_key}__placeholder",
+        )
     st.markdown("**Cards**")
-    render_card_list(page_key, avatar_label, default_avatar)
+    render_card_list(page_key, avatar_label, default_avatar, media_subdir=page_key, allow_video=allow_video)
 
 
 # ---------------------------------------------------------------------------
@@ -457,10 +609,12 @@ with col_form:
     if page_key == "index":
         render_index()
     elif page_key == "contestants":
-        render_cards_page("contestants", "Avatar text (e.g. initials, or \"?\")", "?")
+        render_cards_page("contestants", "Fallback initials (used if no photo is uploaded)", "?")
     elif page_key == "episodes":
-        render_cards_page("episodes", "Number badge (e.g. 01)", "01")
-    elif page_key in ("about", "sponsors"):
+        render_cards_page("episodes", "Fallback number badge (used if no thumbnail is uploaded)", "01", allow_video=True)
+    elif page_key == "sponsors":
+        render_cards_page("sponsors", "Fallback initials (used if no logo is uploaded)", "?", include_placeholder=True)
+    elif page_key == "about":
         render_simple_text_page(page_key)
     elif page_key == "contacts":
         render_contacts()

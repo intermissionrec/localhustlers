@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }}</title>
+<meta name="description" content="{{ meta_description }}">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div data-include="header"></div>
+
+<main>
+  <section class="page-section">
+    <div class="page-section__header">
+      <span class="page-section__eyebrow">{{ eyebrow }}</span>
+      <h1 class="page-section__title">{{ page_title }}</h1>
+      <p class="page-section__lede">
+        {{ lede }}
+      </p>
+    </div>
+    {% if cards %}
+    <div class="card-grid">
+      {% for card in cards %}
+      <article class="card card--logo">
+        {% if card.image %}
+        <div class="card__avatar card__avatar--photo card__avatar--logo"><img src="{{ card.image }}" alt="{{ card.title }}" loading="lazy"></div>
+        {% else %}
+        <div class="card__avatar">{{ card.avatar }}</div>
+        {% endif %}
+        <h3 class="card__title">{{ card.title }}</h3>
+        <p class="card__meta">{{ card.meta }}</p>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="placeholder-card">{{ placeholder }}</div>
+    {% endif %}
+  </section>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>

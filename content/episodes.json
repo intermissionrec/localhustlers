@@ -1,0 +1,12 @@
+{
+  "title": "Local Hustlers — Епизоди",
+  "meta_description": "Гледай всички епизоди на Local Hustlers.",
+  "eyebrow": "Сезон 1",
+  "page_title": "Епизоди",
+  "lede": "Всички епизоди на Local Hustlers ще бъдат публикувани тук веднага след излъчване.",
+  "cards": [
+    { "avatar": "01", "title": "Епизод 1", "meta": "Очаквайте скоро" },
+    { "avatar": "02", "title": "Епизод 2", "meta": "Очаквайте скоро" },
+    { "avatar": "03", "title": "Епизод 3", "meta": "Очаквайте скоро" }
+  ]
+}

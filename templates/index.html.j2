@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }}</title>
+<meta name="description" content="{{ meta_description }}">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div data-include="header"></div>
+
+<main>
+  <section class="hero">
+    <div>
+      <span class="hero__eyebrow">{{ hero.eyebrow }}</span>
+      <h1 class="hero__title">{{ hero.title }}</h1>
+      <p class="hero__subtitle">
+        {{ hero.subtitle }}
+      </p>
+      <div class="hero__actions">
+        <a href="{{ hero.primary_btn_href }}" class="btn btn--primary">{{ hero.primary_btn_text }}</a>
+        <a href="{{ hero.outline_btn_href }}" class="btn btn--outline">{{ hero.outline_btn_text }}</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section page-section--muted">
+    <div class="page-section__header">
+      <span class="page-section__eyebrow">{{ about_teaser.eyebrow }}</span>
+      <h2 class="page-section__title">{{ about_teaser.title }}</h2>
+      <p class="page-section__lede">
+        {{ about_teaser.lede }}
+      </p>
+    </div>
+    <div class="placeholder-card">{{ about_teaser.placeholder }}</div>
+  </section>
+</main>
+
+<div data-include="footer"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
