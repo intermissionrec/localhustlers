@@ -89,13 +89,29 @@
 
   function highlightActiveLink() {
     var current = window.location.pathname.split('/').pop() || 'index.html';
+
+    // Nav links: highlight the current page and stop it from re-navigating
+    // to (reloading) the page you're already on.
     document.querySelectorAll('.main-nav__link[data-nav]').forEach(function (link) {
       if (link.getAttribute('data-nav') === current) {
         link.classList.add('is-active');
+        link.setAttribute('aria-current', 'page');
+        link.addEventListener('click', function (event) {
+          event.preventDefault();
+        });
       } else {
         link.classList.remove('is-active');
       }
     });
+
+    // Logo link: same fix so clicking it on the home page doesn't reload it.
+    var brandLink = document.querySelector('.brand[href]');
+    if (brandLink && brandLink.getAttribute('href').split('/').pop() === current) {
+      brandLink.setAttribute('aria-current', 'page');
+      brandLink.addEventListener('click', function (event) {
+        event.preventDefault();
+      });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function () {

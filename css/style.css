@@ -97,6 +97,11 @@ ul {
   z-index: 101;
   display: block;
   line-height: 0;
+  /* Constrain the clickable/hover area to the round coin in the artwork
+     instead of the full rectangular image box (which includes transparent
+     corners and the letter legs that poke past the ring). */
+  -webkit-clip-path: circle(72px at 51% 55%);
+  clip-path: circle(72px at 51% 55%);
 }
 
 .brand__logo {
@@ -508,6 +513,8 @@ ul {
   .brand {
     top: 10px;
     left: 16px;
+    -webkit-clip-path: circle(45px at 51% 55%);
+    clip-path: circle(45px at 51% 55%);
   }
 
   .brand__logo {
