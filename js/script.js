@@ -114,7 +114,82 @@
     }
   }
 
+  // ---------------------------------------------------------------------
+  // Page transition: the overlay itself lives directly in each page's
+  // HTML (templates/_page_transition.html.j2) so it's present from the
+  // very first paint — this just handles covering the screen again,
+  // with the same downward motion, right before navigating to another
+  // page. Uses event delegation on `document` so it also catches clicks
+  // on the header/footer nav links, which get added later once those
+  // partials finish loading.
+  // ---------------------------------------------------------------------
+  var TRANSITION_MS = 600;
+
+  function initPageTransition() {
+    var overlay = document.querySelector('.page-transition');
+    if (!overlay) return;
+
+    var prefersReducedMotion =
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return; // let links navigate instantly, no delay
+
+    function isInternalPageLink(link) {
+      if (!link || !link.getAttribute('href')) return false;
+      if (link.hasAttribute('download')) return false;
+      var targetAttr = link.getAttribute('target');
+      if (targetAttr && targetAttr !== '_self') return false;
+
+      var url;
+      try {
+        url = new URL(link.href, window.location.href);
+      } catch (error) {
+        return false;
+      }
+      if (url.origin !== window.location.origin) return false;
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+
+      var current = window.location.pathname.split('/').pop() || 'index.html';
+      var target = url.pathname.split('/').pop() || 'index.html';
+      if (target === current) return false; // same page — nothing to transition to
+      if (!/\.html?$/i.test(target)) return false; // only intercept links to other site pages
+
+      return true;
+    }
+
+    document.addEventListener('click', function (event) {
+      if (event.defaultPrevented) return;
+      if (event.button !== 0) return; // left click only
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      var link = event.target.closest ? event.target.closest('a') : null;
+      if (!isInternalPageLink(link)) return;
+
+      event.preventDefault();
+      var href = link.href;
+
+      // Snap the overlay above the viewport with no transition, then
+      // animate it back down to cover the screen — the mirror image of
+      // the reveal-on-load animation, so the motion always reads as one
+      // continuous downward sweep no matter which direction it's going.
+      overlay.style.animation = 'none';
+      overlay.style.transition = 'none';
+      overlay.style.transform = 'translateY(-100%)';
+      overlay.offsetHeight; // force a reflow so the line above takes effect first
+      overlay.style.transition = 'transform ' + TRANSITION_MS + 'ms cubic-bezier(0.65, 0, 0.35, 1)';
+
+      requestAnimationFrame(function () {
+        overlay.style.transform = 'translateY(0)';
+      });
+
+      window.setTimeout(function () {
+        window.location.href = href;
+      }, TRANSITION_MS);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    initPageTransition();
+
     Promise.all([
       loadPartial('[data-include="header"]', 'partials/header.html'),
       loadPartial('[data-include="footer"]', 'partials/footer.html')

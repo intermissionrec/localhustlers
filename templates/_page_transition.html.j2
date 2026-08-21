@@ -1,0 +1,11 @@
+{# Shared page-transition overlay. Included (at build time, not fetched at
+   runtime) into every page's <body> so it's part of the very first paint —
+   no flash of the bare page before it appears. Its default CSS state is
+   fully covering the screen; a CSS animation reveals the page moments
+   after load, and js/script.js re-covers the screen the same way before
+   navigating to another page, so the whole site always transitions with
+   a single consistent "moving down" motion. See css/style.css for the
+   .page-transition rules and js/script.js for the navigation handling. #}
+<div class="page-transition" aria-hidden="true">
+  <img src="assets/logo.png" alt="" class="page-transition__logo">
+</div>
