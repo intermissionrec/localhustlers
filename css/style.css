@@ -35,6 +35,17 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
+  /* Sticky footer: body is a full-height column, main soaks up any
+     leftover space so the footer sits at the bottom of the viewport on
+     short pages, but still flows naturally after the content on long
+     pages. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+body > main {
+  flex: 1 0 auto;
 }
 
 img,
