@@ -99,7 +99,7 @@ ul {
 }
 
 .page-transition__logo {
-  width: clamp(64px, 10vw, 120px);
+  width: clamp(64px, 10vw, 360px);
   height: auto;
   opacity: 0;
   animation: page-transition-logo-fade 0.7s 0.05s ease forwards;
