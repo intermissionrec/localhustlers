@@ -95,9 +95,12 @@ ul {
   animation: page-transition-reveal 0.7s 0.05s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
-/* Deliberately a sibling of .page-transition, not a child — it stays
-   fixed and centered on screen throughout, independent of the panel's
-   slide, only fading in and out as the panel arrives/departs. */
+/* Deliberately a sibling of .page-transition, not a child — its own fixed
+   positioning keeps it correctly centered on screen regardless of the
+   panel's transform. Its animation moves it with the exact same
+   top-to-bottom translate, timing and easing as the panel, so the two
+   travel together as one piece and the logo leaves off the bottom edge
+   in lockstep with the panel — no fading, just synchronized motion. */
 .page-transition__logo {
   position: fixed;
   top: 50%;
@@ -106,9 +109,8 @@ ul {
   width: clamp(64px, 10vw, 360px);
   height: auto;
   transform: translate(-50%, -50%);
-  opacity: 0;
   pointer-events: none;
-  animation: page-transition-logo-fade 0.7s 0.05s ease forwards;
+  animation: page-transition-logo-reveal 0.7s 0.05s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 @keyframes page-transition-reveal {
@@ -120,18 +122,17 @@ ul {
   }
 }
 
-@keyframes page-transition-logo-fade {
-  0% {
-    opacity: 0;
+/* Same duration/delay/easing as page-transition-reveal above, so the logo
+   slides top-to-bottom off screen in perfect sync with the panel. The
+   base translate(-50%, -50%) keeps it screen-centered; the end state adds
+   100vh of downward travel on top of that, matching the panel's own
+   100%-of-its-own-height (which is 100vh, since it's inset: 0) sweep. */
+@keyframes page-transition-logo-reveal {
+  from {
+    transform: translate(-50%, -50%);
   }
-  30% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
+  to {
+    transform: translate(-50%, calc(-50% + 100vh));
   }
 }
 

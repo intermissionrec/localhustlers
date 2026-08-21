@@ -172,8 +172,10 @@
       // animate it back down to cover the screen — the mirror image of
       // the reveal-on-load animation, so the motion always reads as one
       // continuous downward sweep no matter which direction it's going.
-      // The logo is independent: it just fades in and stays centered,
-      // it never moves with the panel.
+      // The logo is snapped and animated the same way, offset by the same
+      // 100vh, so it slides down from above in lockstep with the panel
+      // and arrives centered exactly as the panel finishes covering —
+      // no fading, just the same translate the panel uses.
       overlay.style.animation = 'none';
       overlay.style.transition = 'none';
       overlay.style.transform = 'translateY(-100%)';
@@ -183,14 +185,14 @@
       if (logo) {
         logo.style.animation = 'none';
         logo.style.transition = 'none';
-        logo.style.opacity = '0';
+        logo.style.transform = 'translate(-50%, calc(-50% - 100vh))';
         logo.offsetHeight;
-        logo.style.transition = 'opacity ' + TRANSITION_MS + 'ms ease';
+        logo.style.transition = 'transform ' + TRANSITION_MS + 'ms cubic-bezier(0.65, 0, 0.35, 1)';
       }
 
       requestAnimationFrame(function () {
         overlay.style.transform = 'translateY(0)';
-        if (logo) logo.style.opacity = '1';
+        if (logo) logo.style.transform = 'translate(-50%, -50%)';
       });
 
       window.setTimeout(function () {

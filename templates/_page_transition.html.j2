@@ -8,7 +8,9 @@
    .page-transition rules and js/script.js for the navigation handling.
 
    The logo is a separate element, not nested inside the sliding panel —
-   it stays fixed and centered on screen the whole time, only fading in
-   and out, while the dark panel behind it does the sliding. #}
+   its own fixed positioning keeps it correctly centered on screen, and
+   its animation moves it in exact sync with the panel's slide (same
+   top-to-bottom translate, timing and easing), so the two travel as one
+   piece with no fading involved. #}
 <div class="page-transition" aria-hidden="true"></div>
 <img src="assets/logo.png" alt="" class="page-transition__logo" aria-hidden="true">
